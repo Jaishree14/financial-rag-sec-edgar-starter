@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+requests
+beautifulsoup4
+pydantic-settings
+qdrant-client
+ollama
+openai
+pytest
+httpx
