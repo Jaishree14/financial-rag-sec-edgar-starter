@@ -18,16 +18,31 @@ def search(
     limit: int = 5,
     ticker: str | None = None,
     section: str | None = None,
+    score_threshold: float | None = None,
 ) -> list[dict]:
     """
     Perform semantic search over indexed SEC filing chunks.
 
     Args:
-        query: Natural-language question.
-        limit: Maximum number of results.
-        ticker: Optional ticker such as AAPL, MSFT, or TSLA.
-        section: Optional section such as risk_factors,
-                 business, cybersecurity, or management_discussion.
+        query:
+            Natural-language question.
+
+        limit:
+            Maximum number of results.
+
+        ticker:
+            Optional company ticker such as AAPL, MSFT, or TSLA.
+
+        section:
+            Optional section such as:
+            business,
+            risk_factors,
+            cybersecurity,
+            management_discussion.
+
+        score_threshold:
+            Optional minimum similarity score.
+            Results below this score are excluded.
     """
 
     if not query or not query.strip():
@@ -47,6 +62,12 @@ def search(
 
         if not section:
             raise ValueError("Section must not be empty.")
+
+    if score_threshold is not None:
+        if score_threshold < -1.0 or score_threshold > 1.0:
+            raise ValueError(
+                "score_threshold must be between -1.0 and 1.0."
+            )
 
     # ---------------------------------------------------------
     # Generate query embedding
@@ -94,6 +115,7 @@ def search(
         query=query_vector,
         query_filter=query_filter,
         limit=limit,
+        score_threshold=score_threshold,
         with_payload=True,
         with_vectors=False,
     ).points

@@ -9,10 +9,12 @@ def main():
     ticker="AAPL",
     section="risk_factors",
     limit=5,
+    score_threshold=0.65,
     )
 
     print("=" * 80)
-    print("TICKER + SECTION FILTERED SEARCH TEST")
+    print("THRESHOLD + TICKER + SECTION SEARCH TEST")
+    print("Score threshold: 0.65")
     print("Section filter: risk_factors")
     print("=" * 80)
     print(f"Query: {query}")
