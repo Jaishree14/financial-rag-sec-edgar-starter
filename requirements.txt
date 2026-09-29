@@ -8,3 +8,5 @@ ollama
 openai
 pytest
 httpx
+SQLAlchemy
+psycopg[binary]
