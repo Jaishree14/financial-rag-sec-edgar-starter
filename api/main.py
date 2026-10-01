@@ -1,8 +1,14 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="Financial RAG - SEC EDGAR", version="0.1.0")
+from api.routes import router
 
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+app = FastAPI(
+    title="Financial RAG API",
+    description=(
+        "SEC EDGAR financial document RAG system."
+    ),
+    version="1.0.0",
+)
+
+app.include_router(router)
