@@ -18,6 +18,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+@router.get("/")
+def root():
+    return {
+        "name": "Financial RAG API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+        "filings": "/filings",
+        "query": "/query",
+    }
 
 @router.get("/health")
 def health():

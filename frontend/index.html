@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Financial RAG</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f7f7f7;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 6px;
+        }
+
+        select,
+        textarea,
+        button {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 15px;
+            color: #666;
+        }
+
+        #answer {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .source {
+            padding: 12px;
+            margin-top: 10px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: #b00020;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Financial RAG</h1>
+
+    <div class="subtitle">
+        SEC EDGAR Financial Document Question Answering
+    </div>
+
+    <div class="card">
+
+        <label for="ticker">Company</label>
+
+        <select id="ticker">
+            <option value="">Select a company</option>
+        </select>
+
+        <label for="section">Section</label>
+
+        <select id="section">
+            <option value="">Select a section</option>
+        </select>
+
+        <label for="question">Question</label>
+
+        <textarea
+            id="question"
+            placeholder="Example: What are Apple's major business risks?"
+        ></textarea>
+
+        <button onclick="askQuestion()">
+            Ask
+        </button>
+
+        <div id="loading">
+            Generating answer...
+        </div>
+
+        <div id="error" class="error"></div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Answer</h2>
+
+        <div id="answer">
+            No answer yet.
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Sources</h2>
+
+        <div id="sources">
+            No sources yet.
+        </div>
+
+    </div>
+
+
+<script>
+
+const API_BASE_URL = "http://localhost:8000";
+
+
+async function loadFilings() {
+
+    const response = await fetch(
+        `${API_BASE_URL}/filings`
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            "Failed to load filings."
+        );
+    }
+
+    const filings = await response.json();
+
+    const tickerSelect =
+        document.getElementById("ticker");
+
+    filings.forEach(filing => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = filing.ticker;
+
+        option.textContent =
+            `${filing.ticker} - ${filing.company_name}`;
+
+        tickerSelect.appendChild(option);
+    });
+
+    tickerSelect.addEventListener(
+        "change",
+        updateSections
+    );
+
+    window.filings = filings;
+}
+
+
+function updateSections() {
+
+    const ticker =
+        document.getElementById("ticker").value;
+
+    const sectionSelect =
+        document.getElementById("section");
+
+    sectionSelect.innerHTML =
+        '<option value="">Select a section</option>';
+
+    if (!ticker) {
+        return;
+    }
+
+    const filing =
+        window.filings.find(
+            item => item.ticker === ticker
+        );
+
+    if (!filing) {
+        return;
+    }
+
+    filing.sections.forEach(section => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = section;
+
+        option.textContent =
+            section.replaceAll("_", " ");
+
+        sectionSelect.appendChild(option);
+    });
+}
+
+
+async function askQuestion() {
+
+    const ticker =
+        document.getElementById("ticker").value;
+
+    const section =
+        document.getElementById("section").value;
+
+    const question =
+        document.getElementById("question").value.trim();
+
+    const answerElement =
+        document.getElementById("answer");
+
+    const sourcesElement =
+        document.getElementById("sources");
+
+    const loadingElement =
+        document.getElementById("loading");
+
+    const errorElement =
+        document.getElementById("error");
+
+    errorElement.textContent = "";
+
+    if (!ticker) {
+        errorElement.textContent =
+            "Please select a company.";
+
+        return;
+    }
+
+    if (!section) {
+        errorElement.textContent =
+            "Please select a section.";
+
+        return;
+    }
+
+    if (!question) {
+        errorElement.textContent =
+            "Please enter a question.";
+
+        return;
+    }
+
+    loadingElement.style.display = "block";
+
+    answerElement.textContent = "Generating...";
+    sourcesElement.innerHTML = "";
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/query`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    question: question,
+                    ticker: ticker,
+                    section: section,
+                    limit: 3,
+                    score_threshold: 0.65
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail ||
+                "Query failed."
+            );
+        }
+
+        answerElement.textContent =
+            data.answer;
+
+        if (!data.sources.length) {
+
+            sourcesElement.textContent =
+                "No sources returned.";
+
+            return;
+        }
+
+        data.sources.forEach(source => {
+
+            const div =
+                document.createElement("div");
+
+            div.className = "source";
+
+            div.innerHTML = `
+                <strong>
+                    [Source ${source.source_number}]
+                </strong><br>
+                ${source.company_name}<br>
+                Section: ${source.section}<br>
+                Filing date: ${source.filing_date}<br>
+                Chunk: ${source.chunk_id}<br>
+                Similarity: ${source.score}
+            `;
+
+            sourcesElement.appendChild(div);
+        });
+
+    } catch (error) {
+
+        answerElement.textContent =
+            "No answer.";
+
+        errorElement.textContent =
+            error.message;
+
+    } finally {
+
+        loadingElement.style.display =
+            "none";
+    }
+}
+
+
+loadFilings().catch(error => {
+
+    document.getElementById(
+        "error"
+    ).textContent = error.message;
+
+});
+
+</script>
+
+</body>
+</html>
