@@ -79,6 +79,17 @@ Rules:
 
 11. Prefer a concise answer with clear categories rather
     than repeating long passages from the filing.
+
+12. Answer only the question that was asked.
+    Do not introduce additional topics, categories, or
+    sections unless they are necessary to directly answer
+    the question.
+
+13. If the retrieved context contains related but
+    unrequested information, ignore it.
+    For example, when asked about business strategies,
+    do not add a separate discussion of risks unless
+    the question explicitly asks about risks.
 """
 
 
@@ -111,16 +122,14 @@ def generate_answer(
             f"{context}\n\n"
             f"USER QUESTION:\n"
             f"{question}\n\n"
-            "Prepare a concise answer based only on the supplied sources.\n"
-            "Group related risks when appropriate.\n\n"
+            "Answer the user's specific question directly and concisely.\n"
+            "Ignore information in the context that is not relevant to "
+            "the question.\n\n"
             "Every factual statement must include an inline citation "
             "such as [Source 1], [Source 2], or [Source 3].\n\n"
             "For example:\n"
-            "- Risk category: explanation [Source 1]\n"
-            "- Risk category: explanation [Source 2]\n"
-            "- Risk category: explanation [Source 3]\n\n"
-            "Do not create a category merely because a sentence fragment "
-            "contains the word 'risk'.\n\n"
+            "- Relevant point: explanation [Source 1]\n"
+            "- Relevant point: explanation [Source 2]\n\n"
             "ANSWER:"
         ),
         "stream": True,

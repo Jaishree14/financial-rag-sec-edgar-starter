@@ -12,6 +12,55 @@ from retrieval.qdrant_store import (
     get_qdrant_client,
 )
 
+SECTION_QUERY_TERMS = {
+    "business": (
+        "business strategy, business model, "
+        "products, services, growth, operations, "
+        "strategic priorities, investments"
+    ),
+    "risk_factors": (
+        "business risks, risk factors, "
+        "uncertainties, adverse effects, "
+        "financial and operational risks"
+    ),
+    "cybersecurity": (
+        "cybersecurity risks, cybersecurity threats, "
+        "security incidents, data breaches, "
+        "information security, security controls, "
+        "privacy and security"
+    ),
+    "management_discussion": (
+        "financial performance, revenue, expenses, "
+        "operating results, margins, liquidity, "
+        "cash flows, management discussion and analysis"
+    ),
+}
+
+def build_search_query(
+    query: str,
+    section: str | None = None,
+) -> str:
+    """
+    Enrich a user query with section-specific terminology.
+
+    The original question remains intact. Additional terms
+    provide semantic context to the embedding model.
+    """
+
+    if section is None:
+        return query
+
+    section_terms = SECTION_QUERY_TERMS.get(
+        section
+    )
+
+    if not section_terms:
+        return query
+
+    return (
+        f"{query}\n"
+        f"Relevant section context: {section_terms}"
+    )
 
 def search(
     query: str,
@@ -73,8 +122,14 @@ def search(
     # Generate query embedding
     # ---------------------------------------------------------
 
-    query_vector = embed_text(query)
+    search_query = build_search_query(
+    query=query,
+    section=section,
+    )
 
+    query_vector = embed_text(
+        search_query
+    )
     client = get_qdrant_client()
 
     # ---------------------------------------------------------

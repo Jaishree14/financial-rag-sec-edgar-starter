@@ -228,6 +228,13 @@ function updateSections() {
     });
 }
 
+function formatAnswer(answer) {
+    return answer
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/^- (.*)$/gm, "<li>$1</li>")
+        .replace(/\n\n/g, "<br><br>")
+        .replace(/\n/g, "<br>");
+}
 
 async function askQuestion() {
 
@@ -312,8 +319,8 @@ async function askQuestion() {
             );
         }
 
-        answerElement.textContent =
-            data.answer;
+        answerElement.innerHTML =
+            formatAnswer(data.answer);
 
         if (!data.sources.length) {
 
